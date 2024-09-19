@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
@@ -7,50 +6,48 @@ import 'package:sqflite/sqflite.dart';
 class DBHelper {
   DBHelper._();
 
-  //singleton
+  static final DBHelper _instance = DBHelper._();
+
   static DBHelper getInstance() {
-    return DBHelper._();
+    return _instance;
   }
 
-  //table note
-  static String tableName = "note";
-  static String columnNoteSNo = "s_no";
-  static String columnNoteTitle = "title";
-  static String columnNoteDesc = "desc";
+  static const String tableName = "note";
+  static const String columnNoteSNo = "s_no";
+  static const String columnNoteTitle = "title";
+  static const String columnNoteDesc = "desc";
 
-  //db open( path ->  if exits then open else create
-  Database? myDB;
+  Database? _database;
 
-  //get database
   Future<Database> getDb() async {
-    //myDB=myDB ?? await openDB();
-    myDB ??= await openDB();
-    return myDB!;
+    _database ??= await _openDB();
+    return _database!;
   }
 
-  //open database
-  Future<Database> openDB() async {
+  Future<Database> _openDB() async {
     Directory appPath = await getApplicationDocumentsDirectory();
     String dbPath = join(appPath.path, "noteDB.db");
-    return await openDatabase(dbPath, onCreate: (db, version) {
-      //create all your tables here
-      db.execute(
-          "create table $tableName($columnNoteSNo integer primary key autoincrement ,$columnNoteTitle text, $columnNoteDesc text ");
-    }, version: 1);
+    return await openDatabase(dbPath, version: 1, onCreate: (db, version) async {
+      await db.execute(
+          "CREATE TABLE $tableName($columnNoteSNo INTEGER PRIMARY KEY AUTOINCREMENT, $columnNoteTitle TEXT, $columnNoteDesc TEXT)"
+      );
+    });
   }
 
-  //add value in table
-  Future<bool> addNote(
-      {required String mTitle, required String mDescribe}) async {
-    var db = await getDb();
-    int rowEffected = await db.insert(
-        tableName, {columnNoteTitle: mTitle, columnNoteDesc: mDescribe});
+  Future<bool> addNote({
+    required String mTitle,
+    required String mDescribe,
+  }) async {
+    final db = await getDb();
+    int rowEffected = await db.insert(tableName, {
+      columnNoteTitle: mTitle,
+      columnNoteDesc: mDescribe,
+    });
     return rowEffected > 0;
   }
 
   Future<List<Map<String, dynamic>>> getAllNotes() async {
-    var db = await getDb();
-    List<Map<String, dynamic>> mData = await db.query(tableName);
-    return mData;
+    final db = await getDb();
+    return await db.query(tableName);
   }
 }
