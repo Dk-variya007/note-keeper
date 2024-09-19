@@ -27,10 +27,10 @@ class DBHelper {
   Future<Database> _openDB() async {
     Directory appPath = await getApplicationDocumentsDirectory();
     String dbPath = join(appPath.path, "noteDB.db");
-    return await openDatabase(dbPath, version: 1, onCreate: (db, version) async {
+    return await openDatabase(dbPath, version: 1,
+        onCreate: (db, version) async {
       await db.execute(
-          "CREATE TABLE $tableName($columnNoteSNo INTEGER PRIMARY KEY AUTOINCREMENT, $columnNoteTitle TEXT, $columnNoteDesc TEXT)"
-      );
+          "CREATE TABLE $tableName($columnNoteSNo INTEGER PRIMARY KEY AUTOINCREMENT, $columnNoteTitle TEXT, $columnNoteDesc TEXT)");
     });
   }
 
@@ -49,5 +49,27 @@ class DBHelper {
   Future<List<Map<String, dynamic>>> getAllNotes() async {
     final db = await getDb();
     return await db.query(tableName);
+  }
+
+  Future<void> deleteDatabaseFile() async {
+    Directory appPath = await getApplicationDocumentsDirectory();
+    String dbPath = join(appPath.path, "noteDB.db");
+    await deleteDatabase(dbPath);
+  }
+
+  Future<bool> update(
+      {required String mTitle, required String mDes, required int sNo}) async {
+    var db = await getDb();
+    int rowEffected = await db.update(
+        tableName, {columnNoteTitle: mTitle, columnNoteDesc: mDes},
+        where: "$columnNoteSNo= ?", whereArgs: ["$sNo"]);
+    return rowEffected > 0;
+  }
+
+  Future<bool> delete({required int sNo}) async {
+    var db = await getDb();
+    int rowEffected = await db
+        .delete(tableName, where: "$columnNoteSNo= ?", whereArgs: ["$sNo"]);
+    return rowEffected > 0;
   }
 }
